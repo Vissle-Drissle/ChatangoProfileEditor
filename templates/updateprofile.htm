@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Remotely update your Chatango full and mini profile.">
+    <link rel="icon" href="static/favicon.ico">
+    <link rel="stylesheet" href="static/updateprofile.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/2.0.0-alpha.2/cropper.min.css" integrity="sha512-6QxSiaKfNSQmmqwqpTNyhHErr+Bbm8u8HHSiinMEz0uimy9nu7lc/2NaXJiUJj2y4BApd5vgDjSHyLzC8nP6Ng==" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.1/js/bootstrap.min.js" integrity="sha512-fHY2UiQlipUq0dEabSM4s+phmn+bcxSYzXP4vAXItBvBHU7zAM/mkhCZjtBEIJexhOMzZbgFlPLuErlJF2b+0g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <title>Chatango Flash Full Profile Editor in HTML5</title>
+  </head>
+  <body data-theme="classic">
+    <dialog id="trust">
+      <form id="login">
+        <fieldset>
+          <legend>Log in to your Chatango account for remote profile editing.</legend>
+          <div class="profile-wrap login-field">
+            <span id="loginError" class="profile-text" hidden></span>
+            <span class="profile-text">Username:</span>
+            <input type="text" placeholder="Username" name="user_id" maxlength="20" pattern="[A-Za-z0-9]{1,20}" title="[A-Za-z0-9]{1,20}" required>
+            <span class="profile-text">Password:</span>
+            <input type="password" placeholder="Password" name="password" maxlength="20" required>
+          </div>
+          <input type="text" name="storecookie" value="on" hidden>
+          <input type="text" name="checkerrors" value="yes" hidden>
+          <button type="submit" class="login-button">Login</button>
+          <h3>Your personal Chatango profile editor.</h3>
+          <div class="profile-text">PM me on "<a href="https://cheese.chatango.com" target="_blank">Cheese</a>" for help or any concerns.</div>
+          <span class="profile-text">Or leave a message in my <a href="https://community.chatango.com">community</a> chat.</span>
+        </fieldset>
+      </form>
+    </dialog>
+    <dialog id="backgroundTime">
+      <input type="text" name="premium" hidden>
+      <span class="background-time"></span>
+    </dialog>
+    <!-- Barry's Tags Parser -->
+    <dialog id="tagsParse">
+      <div class="container">
+        <h3>Parse your profile tags</h3>
+        <div class="form-group">
+          <label for="exampleInputEmail1">Input tags</label>
+          <textarea class="form-control" id="tags">Your / Tags / Here / Removes / Duplicate / Tags</textarea>
+        </div>
+        <div class="form-group">
+          <div class="checkbox">
+            <label><input id="hidden" type="checkbox"> Hidden</label>
+          </div>
+        </div>
+        <div class="form-group">
+          <div class="checkbox">
+            <label><input id="sort" type="checkbox" checked> Alphabetical</label>
+          </div>
+        </div>
+        <div class="form-group">
+          <div class="checkbox">
+            <label><input id="lowercase" type="checkbox"> LowerCase</label>
+          </div>
+        </div>
+        <div class="form-splitter">
+          <label for="exampleInputEmail1">Split on </label>
+          <input class="form-control" type="text" id="split" value="/">
+          <label for="exampleInputEmail1">Join with </label>
+          <input class="form-control" type="text" id="join" value="/">
+        </div>
+        <div class="form-group">
+          <button onclick="parse()" type="submit" class="btn btn-default">Parse</button>
+        </div>
+        <div class="form-group">
+          <label for="exampleInputEmail1">Output <span id="info"></span></label>
+          <textarea class="form-control" id="output"></textarea>
+        </div>
+      </div>
+    </dialog>
+    <!-- Barry's Tags Parser END -->
+    <div id="sidebar">
+      <div class="sidebar-collapse" style="transform: rotateY(180deg);">
+        <span class="sidebar-arrow"></span>
+      </div>
+      <div class="sidebar-content">
+        <h2 class="sidebar-header">Tools</h2>
+        <ul class="sidebar-list">
+          <li class="sidebar-item" id="barry">Barry's Profile Tags</li>
+          <li class="sidebar-item" id="full">View full profile</li>
+          <li class="sidebar-item" id="background">View premium time</li>
+          <li class="sidebar-item" id="theme">Dark mode</li>
+        </ul>
+        <h2 class="sidebar-header">External</h2>
+        <ul class="sidebar-list">
+          <li class="sidebar-item">
+            <a href="https://chatango.vissle.repl.co/track" target="_blank">Cheese's Profile Tracker</a>
+          </li>
+          <li class="sidebar-item">
+            <a href="https://pastebin.com/raw/asSLcpCy" target="_blank">Cheese's Profile Resources (2023)</a>
+          </li>
+          <li class="sidebar-item">
+            <a href="https://pastebin.com/raw/JNxQK8wn" target="_blank">Daisy's Profile Resources (2018)</a>
+          </li>
+          <li class="sidebar-item">
+            <a href="https://pastebin.com/u/daisugoi" target="_blank">Daisy's Profile Themes</a>
+          </li>
+        </ul>
+        <h2 class="sidebar-header">Help</h2>
+        <ul class="sidebar-list">
+          <li class="sidebar-item">
+            <a href="https://github.com/Vissle-Drissle/ChatangoProfileEditor" target="_blank">GitHub (Source)</a>
+          </li>
+          <li class="sidebar-item">
+            <a href="https://community.chatango.com" target="_blank">Community (Group)</a>
+          </li>
+          <li class="sidebar-item">
+            <a href="https://cheese.chatango.com" target="_blank">Cheese (Developer)</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+    <form id="avatar" hidden>
+      <input type="file" name="image">
+      <input type="text" name="user_id">
+      <button type="submit"></button>
+    </form>
+    <form id="profile" class="profile-container">
+      <span id="profileError" class="profile-text" hidden></span>
+      <div class="profile-wrap">
+        <div class="profile-mini">
+          <span class="profile-text">Your Profile</span>
+          <div class="profile-box">
+            <div class="profile-mini-header">
+              <div class="profile-mini-thumbnail">
+                <img class="profile-mini-icon" src="static/noimage.jpg" alt="Avatar thumbnail">
+              </div>
+              <div class="profile-mini-info">
+                <span class="profile-text">Age</span>
+                <input type="number" placeholder="?" name="age" autocomplete="off">
+              </div>
+              <div class="profile-mini-info">
+                <span class="profile-text">Gender</span>
+                <input type="text" placeholder="?" name="gender" autocomplete="off">
+              </div>
+              <div class="profile-mini-info">
+                <span class="profile-text">US zip or Country</span>
+                <input type="text" placeholder="?" name="location" autocomplete="off">
+              </div>
+            </div>
+            <span class="profile-text">About me (for private and group chats)</span>
+            <textarea rows="10" name="line" maxlength="2048"></textarea>
+            <div class="profile-check">
+              <label class="profile-option">
+                <input type="checkbox" name="dir" checked>
+                <span class="profile-text">Show in user directory</span>
+              </label>
+              <label class="profile-option">
+                <input type="checkbox">
+                <span class="profile-text">Show friends on profile (coming soon)</span>
+              </label>
+            </div>
+          </div>
+        </div>
+        <div class="profile-avatar">
+          <span class="profile-text">Your Face Picture:</span>
+          <div class="profile-progress">
+            <button type="button" id="upload">Choose a picture from your computer</button>
+            <div class="profile-upload" hidden>
+              <span class="profile-cancel">X</span>
+            </div>
+          </div>
+          <div class="profile-cropper" hidden>
+            <img src="static/noimage.jpg" id="crop" alt="Avatar cropper">
+          </div>
+        </div>
+      </div>
+      <div class="profile-box profile-full">
+        <span class="profile-text">Main profile (put HTML, your codes for videos, music, embeds etc. here)</span>
+        <textarea rows="10" name="full_profile" maxlength="20000"></textarea>
+      </div>
+      <div class="profile-wrap profile-style">
+        <table class="profile-box">
+          <tr>
+            <th></th>
+            <th></th>
+          </tr>
+          <tr>
+            <td>Background color</td>
+            <td>
+              <input type="color" value="#ffffff" name="body_bg_col">
+            </td>
+          </tr>
+          <tr>
+            <td>Text color</td>
+            <td>
+              <input type="color" value="#000000" name="body_col">
+            </td>
+          </tr>
+          <tr>
+            <td>Link color</td>
+            <td>
+              <input type="color" value="#0084ef" name="body_a_col">
+            </td>
+          </tr>
+        </table>
+        <div class="profile-box profile-image">
+          <span class="profile-text">Background image (optional)</span>
+          <label class="profile-option">
+            <span class="profile-text">Link to your image:</span>
+            <input type="text" name="body_bg_img">
+          </label>
+          <div class="profile-option">
+            <span class="profile-text">Tile image:</span>
+            <label class="profile-option">
+              <input type="checkbox" name="body_tile_a">
+              <span class="profile-text">Tile across</span>
+            </label>
+            <label class="profile-option">
+              <input type="checkbox" name="body_tile_d">
+              <span class="profile-text">Tile down</span>
+            </label>
+          </div>
+        </div>
+      </div>
+      <label class="profile-email profile-option">
+        <span class="profile-text">Your email (not visible to others):</span>
+        <input type="text" placeholder="?" name="email">
+      </label>
+      <div class="profile-footer">
+        <button type="submit">Save Profile</button>
+        <a href="https://chatango.com/forgot" target="_blank" referrerpolicy="no-referrer">Need to reset your password?</a>
+      </div>
+    </form>
+    <script src="static/updateprofile.js"></script>
+  </body>
+</html>
