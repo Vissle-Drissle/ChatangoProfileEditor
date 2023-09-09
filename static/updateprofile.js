@@ -106,7 +106,6 @@ upload.onclick = () => {
   avatar.querySelector('input[type="file"]').click()
 }
 
-
 // Convert displayed parameters to their returned value
 const valueMap = {
   age: "age",
@@ -144,29 +143,31 @@ async function setFull(form, data) {
   var user_id = avatar.querySelector('input[name="user_id"]').value
   await fetch(`/getprofile/${user_id}`).then(async profile => {
     var full = await profile.json()
-    crop.src = `static/avatars/${user_id.toLowerCase()}.jpg`
-    crop.parentNode.removeAttribute("hidden")
-    var icon = document.querySelector(".profile-mini-icon")
-    if (icon) icon.remove()
-    crop.onload = () => {
-      new Cropper(crop, {
-        aspectRatio: 1,
-        viewMode: 2,
-        preview: ".profile-mini-thumbnail",
-        checkOrientation: true,
-        ready() {
-          var ratio = this.cropper.imageData.width / this.cropper.imageData.naturalWidth
-          var width = data.get("ts") < 0 ? this.cropper.imageData.width: Math.floor(+data.get("ts") * ratio)
-          var top = data.get("y0") < 0 ? 0: (+data.get("y0") + 87) * ratio
-          var left = data.get("x0") < 0 ? 0: +data.get("x0") * ratio
-          this.cropper.setCropBoxData({top: top, left: left, width: width, height: width})
-        },
-        crop(x) { // The avatar thumbnail was moved, set that it was changed
-          updateAvatar = true
-        }
-      })
+    if (data.get("ts") != -1) {
+      crop.src = `static/avatars/${user_id.toLowerCase()}.jpg`
+      crop.parentNode.removeAttribute("hidden")
+      var icon = document.querySelector(".profile-mini-icon")
+      if (icon) icon.remove()
+      crop.onload = () => {
+        new Cropper(crop, {
+          aspectRatio: 1,
+          viewMode: 2,
+          preview: ".profile-mini-thumbnail",
+          checkOrientation: true,
+          ready() {
+            var ratio = this.cropper.imageData.width / this.cropper.imageData.naturalWidth
+            var width = data.get("ts") < 0 ? this.cropper.imageData.width: Math.floor(+data.get("ts") * ratio)
+            var top = data.get("y0") < 0 ? 0: (+data.get("y0") + 87) * ratio
+            var left = data.get("x0") < 0 ? 0: +data.get("x0") * ratio
+            this.cropper.setCropBoxData({top: top, left: left, width: width, height: width})
+          },
+          crop(x) { // The avatar thumbnail was moved, set that it was changed
+            updateAvatar = true
+          }
+        })
+      }
     }
-    document.querySelector(`textarea[name="full_profile"]`).value = profile.full != "None" ? decodeURIComponent(full.profile): ""
+    if (full.profile) document.querySelector(`textarea[name="full_profile"]`).value = full.profile
     if (full.body_bg_col) document.querySelector(`input[name="body_bg_col"]`).value = full.body_bg_col
     if (full.body_col) document.querySelector(`input[name="body_col"]`).value = full.body_col
     if (full.body_a_col) document.querySelector(`input[name="body_a_col"]`).value = full.body_a_col
@@ -189,6 +190,36 @@ async function setFull(form, data) {
   }).catch(e => {
     document.querySelector(".profile-footer button").removeAttribute("disabled")
   })
+}
+
+// Set profile information
+var warning = {
+  set: [],
+  age: false
+}
+
+function setProfile(data, initial) {
+  var detail = ["age", "gender", "location"]
+  if (data.get("vrfd") == 0) {
+    password.onclick = () => {
+      return confirm("Your email is not verified")
+    }
+  } else {
+    password.onclick = null
+  }
+  for (var x in valueMap) {
+    var change = data.get(valueMap[x])
+    var input = document.querySelector(`input[name="${x}"]`) || document.querySelector(`textarea[name="${x}"]`)
+    if (detail.includes(x)) {
+      if (change != "?" && change != "None") input.value = change
+    } else {
+      input.value = decodeURIComponent(change)
+    }
+    if (initial) {
+      if (detail.includes(x) && (change == "?" || change == "None")) warning.set.push(x)
+      if (x == "age" && input.value > 99) warning.age = parseInt(input.value)
+    }
+  }
 }
 
 // Log in then retrieve and set the profile information
@@ -216,17 +247,30 @@ login.onsubmit = x => {
       trust.close()
       document.title = `${form.user_id} - ` + document.title
       document.querySelector('input[name="dir"]').checked = data.get("dir") == "checked"
-      for (let y in valueMap) {
-        var change = data.get(valueMap[y])
-        var input = document.querySelector(`input[name="${y}"]`) || document.querySelector(`textarea[name="${y}"]`)
-        input.value = decodeURIComponent(change)
-      }
+      setProfile(data, true)
       profile.onsubmit = async y => { // Overwrite initial profile updating form submit because now logged in
         y.preventDefault()
         var save = new FormData(y.target)
         var update = Object.fromEntries(save)
-        update.location == "None" ? update.location = "?": null
+        if (update.dir) update.dir = "checked"
         profileError.setAttribute("hidden", true)
+        if (warning.set.length) {
+          var sure = warning.set.filter(z => update[z].length)
+          if (sure.length) {
+            var check = confirm(`Setting ${sure.join(", ")} will not allow you to remove them`)
+            if (check) {
+              warning.set = warning.set.filter(x => !sure.includes(x))
+            } else {
+              return
+            }
+          }
+        }
+        if (warning.age) {
+          if (update.age <= 99) {
+            var check = confirm(`Changing your age below 99 will not allow you set it above 100 or back to ${warning.age}`)
+            if (!check) return
+          } else if (update.age == warning.age) delete update.age
+        }
         document.querySelector(".profile-footer button").setAttribute("disabled", true)
         if (updateAvatar) await saveThumb()
         await fetch("/updateprofile", {
@@ -239,11 +283,7 @@ login.onsubmit = x => {
           if (updated.status == 200 && !changes.get("error")) {
             await setFull(update, changes)
             document.querySelector('input[name="dir"]').checked = changes.get("dir") == "checked"
-            for (let y in valueMap) {
-              var change = changes.get(valueMap[y])
-              var input = document.querySelector(`input[name="${y}"]`) || document.querySelector(`textarea[name="${y}"]`)
-              input.value = decodeURIComponent(change)
-            }
+            setProfile(changes)
           } else {
             profileError.textContent = changes.get("error")
             profileError.removeAttribute("hidden")
@@ -351,6 +391,11 @@ theme.onclick = () => {
   theme.textContent = `${presentTheme[0].toUpperCase() + presentTheme.slice(1)} mode`
   document.body.setAttribute("data-theme", selectTheme)
   localStorage.setItem("theme", selectTheme)
+}
+
+// Basically logout
+logout.onclick = () => {
+  location.reload()
 }
 
 // Load external dependencies, cropperjs for avatar cropping and underscore for Barry's tags parser
