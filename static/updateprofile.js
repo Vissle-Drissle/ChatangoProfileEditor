@@ -40,7 +40,7 @@ avatar.onsubmit = x => {
   request.onload = x => {
     document.querySelector(".profile-upload").removeAttribute("style")
     if (x.target.responseText == "pix") {
-      crop.cropper.destroy()
+      if (crop.cropper) crop.cropper.destroy()
       fetch(crop.src, {
         cache: "reload"
       }).then(async response => {
