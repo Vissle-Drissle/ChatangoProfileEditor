@@ -157,7 +157,8 @@ async function setFull(form, data) {
           ready() {
             var ratio = this.cropper.imageData.width / this.cropper.imageData.naturalWidth
             var width = data.get("ts") < 0 ? this.cropper.imageData.width: Math.floor(+data.get("ts") * ratio)
-            var top = data.get("y0") < 0 ? 0: (+data.get("y0") + 87) * ratio
+            var top = data.get("y0") < 0 ? 0: +data.get("y0") * ratio
+            if (this.cropper.imageData.width > this.cropper.imageData.height) top = data.get("y0") < 0 ? 0: (+data.get("y0") + 87) * ratio
             var left = data.get("x0") < 0 ? 0: +data.get("x0") * ratio
             this.cropper.setCropBoxData({top: top, left: left, width: width, height: width})
           },
