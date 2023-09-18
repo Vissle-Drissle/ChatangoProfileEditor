@@ -10,7 +10,7 @@ import lxml.etree
 A web application that recreates the Flash Chatango profile editor in HTML5, intended to be ran locally.
 Allowing you to remotely update your full Chatango profile with a familiar interface.
 
-Version: 1.0.0
+Version: 1.0.1
 Author: @Cheese [https://github.com/Vissle-Drissle]
 Requirements:
   - Python ^3.10.x
@@ -126,7 +126,13 @@ def updateprofile():
                                 headers=headers
                                 ).content
           file.write(avatar)
-        return update.text
+        errors = {
+          403: "Unauthorized, relogin is required",
+          404: "Missing parameters",
+          406: "Please submit JPEG or GIF images only",
+          415: "Picture editing not available due to server maintainence - please try again in 1-2 hours"
+        }
+        return ("error=" + errors[update.status_code]) if update.status_code in errors else update.text
       elif flask.request.data:
         form = json.loads(flask.request.data)
         if "body_bg_col" in form:
