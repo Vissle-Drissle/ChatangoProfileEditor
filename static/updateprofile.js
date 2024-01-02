@@ -155,11 +155,13 @@ async function setFull(form, data) {
           preview: ".profile-mini-thumbnail",
           checkOrientation: true,
           ready() {
+            var container = this.cropper.getContainerData()
+            var retainWidth = (container.width - this.cropper.imageData.width) / 2
+            var retainHeight = (container.height - this.cropper.imageData.height) / 2
             var ratio = this.cropper.imageData.width / this.cropper.imageData.naturalWidth
-            var width = data.get("ts") < 0 ? this.cropper.imageData.width: Math.floor(+data.get("ts") * ratio)
-            var top = data.get("y0") < 0 ? 0: +data.get("y0") * ratio
-            if (this.cropper.imageData.width > this.cropper.imageData.height) top = data.get("y0") < 0 ? 0: (+data.get("y0") + 87) * ratio
-            var left = data.get("x0") < 0 ? 0: +data.get("x0") * ratio
+            var top = (data.get("y0") * ratio) + retainHeight
+            var left = (data.get("x0") * ratio) + retainWidth
+            var width = data..get("ts") * ratio
             this.cropper.setCropBoxData({top: top, left: left, width: width, height: width})
           },
           crop(x) { // The avatar thumbnail was moved, set that it was changed
