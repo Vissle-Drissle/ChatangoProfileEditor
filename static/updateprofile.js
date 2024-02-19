@@ -197,8 +197,7 @@ async function setFull(form, data) {
 
 // Set profile information
 var warning = {
-  set: [],
-  age: false
+  set: []
 }
 
 function setProfile(data, initial) {
@@ -220,7 +219,6 @@ function setProfile(data, initial) {
     }
     if (initial) {
       if (detail.includes(x) && (change == "?" || change == "None")) warning.set.push(x)
-      if (x == "age" && input.value > 99) warning.age = parseInt(input.value)
     }
   }
 }
@@ -267,12 +265,6 @@ login.onsubmit = x => {
               return
             }
           }
-        }
-        if (warning.age) {
-          if (update.age <= 99) {
-            var check = confirm(`Changing your age below 99 will not allow you set it above 100 or back to ${warning.age}`)
-            if (!check) return
-          } else if (update.age == warning.age) delete update.age
         }
         document.querySelector(".profile-footer button").setAttribute("disabled", true)
         if (updateAvatar) await saveThumb()
